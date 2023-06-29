@@ -1,0 +1,72 @@
+import numpy as np
+from sklearn.model_selection import train_test_split
+
+class NeuralNetwork:
+    def __init__(self):
+        np.random.seed(1)
+        # We model a 2-layer neural network with 3 input neurons, 5 neurons in the first hidden layer,
+        # 4 neurons in the second hidden layer, and 1 output neuron.
+        self.weights1 = 2 * np.random.random((3, 5)) - 1
+        self.weights2 = 2 * np.random.random((5, 4)) - 1
+        self.weights3 = 2 * np.random.random((4, 1)) - 1
+
+    def __sigmoid(self, x):
+        return 1 / (1 + np.exp(-x))
+
+    def train(self, inputs, outputs, num):
+        for iteration in range(num):
+            # Forward propagation
+            hidden1 = self.__sigmoid(np.dot(inputs, self.weights1))
+            hidden2 = self.__sigmoid(np.dot(hidden1, self.weights2))
+            output = self.__sigmoid(np.dot(hidden2, self.weights3))
+
+            # Backpropagation
+            output_error = outputs - output
+            output_delta = output_error * output * (1 - output)
+
+            hidden2_error = output_delta.dot(self.weights3.T)
+            hidden2_delta = hidden2_error * hidden2 * (1 - hidden2)
+
+            hidden1_error = hidden2_delta.dot(self.weights2.T)
+            hidden1_delta = hidden1_error * hidden1 * (1 - hidden1)
+
+            # Weight updates
+            self.weights3 += hidden2.T.dot(output_delta)
+            self.weights2 += hidden1.T.dot(hidden2_delta)
+            self.weights1 += inputs.T.dot(hidden1_delta)
+
+    def predict(self, inputs):
+        hidden1 = self.__sigmoid(np.dot(inputs, self.weights1))
+        hidden2 = self.__sigmoid(np.dot(hidden1, self.weights2))
+        output = self.__sigmoid(np.dot(hidden2, self.weights3))
+        return output
+
+
+# Example usage
+network = NeuralNetwork()
+
+# Data: inputs with values ranging from 0 to 9 and their corresponding outputs
+inputs = np.array([[2, 4, 1], [8, 7, 9], [5, 3, 6], [0, 5, 9], [3, 1, 8], [2, 6, 4], [1, 0, 6], [5, 9, 7], [9, 2, 8], [7, 1, 6], [3, 8, 0], [6, 2, 3], [8, 3, 1], [7, 6, 4], [0, 1, 9], [9, 8, 7], [6, 5, 2], [4, 2, 8], [1, 5, 3], [3, 7, 6], [8, 1, 0], [5, 9, 2], [4, 0, 6], [7, 2, 4], [6, 1, 9], [9, 3, 5], [1, 8, 2], [0, 7, 4], [2, 5, 9], [3, 6, 1]])
+outputs = np.array([[0.65], [0.98], [0.78], [0.88], [0.71], [0.61], [0.53], [0.96], [0.94], [0.72], [0.49], [0.67], [0.8], [0.83], [0.58], [0.92], [0.73], [0.85], [0.51], [0.65], [0.36], [0.91], [0.89], [0.7], [0.65], [0.97], [0.56], [0.44], [0.75], [0.65]])
+
+# Split the data into training (70%), validation (15%), and testing (15%) sets
+X_train, X_val_test, y_train, y_val_test = train_test_split(inputs, outputs, test_size=0.3, random_state=1)
+X_val, X_test, y_val, y_test = train_test_split(X_val_test, y_val_test, test_size=0.5, random_state=1)
+
+# Train the neural network using the training set
+num_iterations = 1000
+network.train(X_train, y_train, num_iterations)
+
+# Evaluate the neural network on the validation set
+val_predictions = network.predict(X_val)
+val_error = np.mean(np.abs(val_predictions - y_val))
+print("Validation error:", val_error)
+
+# Evaluate the neural network on the testing set
+test_predictions = network.predict(X_test)
+test_error = np.mean(np.abs(test_predictions - y_test))
+print("Testing error:", test_error)
+
+# Example prediction: predict the output value for an input [1, 6, 9]
+prediction = network.predict(np.array([[0,5,9]]))
+print("Predicted output:", prediction[0][0])
